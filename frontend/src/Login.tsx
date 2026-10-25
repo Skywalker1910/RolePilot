@@ -1,6 +1,5 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useLocation } from "react-router-dom";
 import { Compass, LockKeyhole } from "lucide-react";
 import { api, setCsrfToken } from "./api";
 import { Button } from "./components/ui/button";
@@ -12,8 +11,13 @@ export type AuthSession = {
   user?: { id: number; username: string; role: "admin" | "user" } | null;
 };
 
-export function Login({ onAuthenticated }: { onAuthenticated: (session: AuthSession) => void }) {
-  const adminRoute = useLocation().pathname.startsWith("/admin");
+export function Login({
+  onAuthenticated,
+  adminRoute = false,
+}: {
+  onAuthenticated: (session: AuthSession) => void;
+  adminRoute?: boolean;
+}) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [invitationCode, setInvitationCode] = useState("");
