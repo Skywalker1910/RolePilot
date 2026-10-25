@@ -98,7 +98,10 @@ it("simplifies navigation and keeps secondary routes inside Opportunities", () =
   expect(
     screen.queryByRole("link", { name: "Companies" }),
   ).not.toBeInTheDocument();
-  expect(screen.getByText("Network")).toHaveAttribute("aria-disabled", "true");
+  expect(screen.getByText("Network").parentElement).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
   expect(
     screen.queryByRole("link", { name: "Import jobs" }),
   ).not.toBeInTheDocument();

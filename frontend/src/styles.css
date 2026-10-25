@@ -1461,19 +1461,21 @@ nav > a.active { font-weight: 650; box-shadow: inset 2px 0 var(--accent); }
 .local-card > svg { margin-bottom: 7px; width: 16px; }
 .local-card p { margin-bottom: 8px; }
 .nav-collapsed .sidebar { width: 68px; min-width: 68px; padding-inline: 9px; }
-.nav-collapsed .sidebar-topline { flex-direction: column; gap: 10px; }
-.nav-collapsed .brand { padding: 0; }
-.nav-collapsed .brand > span:last-child,
-.nav-collapsed .workspace > div,
-.nav-collapsed .workspace > svg,
-.nav-collapsed .nav-group-label,
-.nav-collapsed .nav-disabled small,
-.nav-collapsed .local-card { display: none; }
-.nav-collapsed .workspace { justify-content: center; padding: 7px; margin: 17px 0 14px; }
-.nav-collapsed nav > a,
-.nav-collapsed .nav-disabled { justify-content: center; gap: 0; padding: 9px; font-size: 0; }
-.nav-collapsed nav > a svg,
-.nav-collapsed .nav-disabled svg { width: 18px; height: 18px; }
+.nav-collapsed .sidebar .sidebar-topline { flex-direction: column; gap: 10px; }
+.nav-collapsed .sidebar .brand { padding: 0; }
+.nav-collapsed .sidebar .brand > span:last-child,
+.nav-collapsed .sidebar .workspace > div,
+.nav-collapsed .sidebar .workspace > svg,
+.nav-collapsed .sidebar .nav-group-label,
+.nav-collapsed .sidebar .nav-disabled small,
+.nav-collapsed .sidebar .local-card,
+.nav-collapsed .sidebar nav > a > span,
+.nav-collapsed .sidebar .nav-disabled > span { display: none; }
+.nav-collapsed .sidebar .workspace { justify-content: center; padding: 7px; margin: 17px 0 14px; }
+.nav-collapsed .sidebar nav > a,
+.nav-collapsed .sidebar .nav-disabled { justify-content: center; gap: 0; padding: 9px; font-size: 0; }
+.nav-collapsed .sidebar nav > a svg,
+.nav-collapsed .sidebar .nav-disabled svg { width: 18px; height: 18px; }
 .main-shell { min-width: 0; }
 .topbar { height: 56px; padding: 0 26px; background: color-mix(in srgb, var(--panel) 94%, transparent); }
 .global-search { width: min(460px, 56vw); }
@@ -1641,7 +1643,9 @@ tbody tr { transition: background-color 120ms ease; }
   .nav-collapsed .sidebar.open .workspace > div,
   .nav-collapsed .sidebar.open .workspace > svg,
   .nav-collapsed .sidebar.open .nav-group-label,
-  .nav-collapsed .sidebar.open .local-card { display: revert; }
+  .nav-collapsed .sidebar.open .local-card,
+  .nav-collapsed .sidebar.open nav > a > span,
+  .nav-collapsed .sidebar.open .nav-disabled > span { display: revert; }
   .nav-collapsed .sidebar.open nav > a,
   .nav-collapsed .sidebar.open .nav-disabled { justify-content: flex-start; gap: 10px; font-size: 12px; }
   .nav-collapsed .sidebar.open .workspace { justify-content: flex-start; }
