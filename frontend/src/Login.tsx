@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { useLocation } from "react-router-dom";
 import { Compass, LockKeyhole } from "lucide-react";
 import { api, setCsrfToken } from "./api";
 import { Button } from "./components/ui/button";
@@ -12,6 +13,7 @@ export type AuthSession = {
 };
 
 export function Login({ onAuthenticated }: { onAuthenticated: (session: AuthSession) => void }) {
+  const adminRoute = useLocation().pathname.startsWith("/admin");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [invitationCode, setInvitationCode] = useState("");
@@ -44,8 +46,8 @@ export function Login({ onAuthenticated }: { onAuthenticated: (session: AuthSess
       <main className="auth-card">
         <div className="brand auth-brand"><span className="brand-mark"><Compass size={21} /></span><span>Role<span className="brand-light">Pilot</span><small>YOUR NEXT CHAPTER</small></span></div>
         <div className="auth-lock"><LockKeyhole size={18} /></div>
-        <h1>{signingUp ? "Create an account" : "Welcome back"}</h1>
-        <p>{signingUp ? "Use an invitation code from a RolePilot administrator." : "Sign in to your career workspace."}</p>
+        <h1>{signingUp ? "Create an account" : adminRoute ? "Administrator sign-in" : "Welcome back"}</h1>
+        <p>{signingUp ? "Use an invitation code from a RolePilot administrator." : adminRoute ? "Sign in with an active administrator account to manage users." : "Sign in to your career workspace."}</p>
         <form onSubmit={(event) => void submit(event)}>
           <label>Username<input autoComplete="username" required value={username} onChange={(event) => setUsername(event.target.value)} /></label>
           <label>Password<input autoComplete={signingUp ? "new-password" : "current-password"} type="password" minLength={signingUp ? 14 : 1} required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
@@ -53,9 +55,11 @@ export function Login({ onAuthenticated }: { onAuthenticated: (session: AuthSess
           {error && <p role="alert" className="error compact">{error}</p>}
           <Button disabled={busy}>{busy ? "Please wait…" : signingUp ? "Create account" : "Sign in"}</Button>
         </form>
-        <button className="text-action auth-switch" type="button" onClick={() => { setSigningUp(!signingUp); setError(""); }}>
-          {signingUp ? "Already have an account? Sign in" : "Have an invitation code? Create an account"}
-        </button>
+        {!adminRoute && (
+          <button className="text-action auth-switch" type="button" onClick={() => { setSigningUp(!signingUp); setError(""); }}>
+            {signingUp ? "Already have an account? Sign in" : "Have an invitation code? Create an account"}
+          </button>
+        )}
       </main>
     </div>
   );

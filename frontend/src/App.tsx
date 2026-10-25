@@ -101,7 +101,27 @@ export function App() {
     );
   }
   if (location.pathname.startsWith("/admin")) {
-    return <Navigate to="/" replace />;
+    return (
+      <div className={`${dark ? "app dark" : "app"} admin-access-app`}>
+        <main className="admin-access-card">
+          <div className="eyebrow">ROLEPILOT ADMINISTRATION</div>
+          <h1>Administrator sign-in required</h1>
+          <p>
+            The admin console is available at <strong>/admin</strong>. Sign in
+            with an active administrator account to manage users and invitations.
+          </p>
+          {auth.data?.auth_required ? (
+            <Button onClick={() => void logout()}>
+              Sign out and switch account
+            </Button>
+          ) : (
+            <Link className="button button-outline" to="/">
+              Return to workspace
+            </Link>
+          )}
+        </main>
+      </div>
+    );
   }
   return (
     <div

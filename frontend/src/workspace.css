@@ -1199,6 +1199,10 @@ td {
     font-size: 0;
     gap: 0;
   }
+  .sidebar nav > a > span,
+  .sidebar .nav-disabled > span {
+    display: none;
+  }
   .sidebar nav {
     margin-top: 30px;
   }
@@ -1404,6 +1408,10 @@ td {
 .admin-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .admin-shortcuts a { display: grid; gap: 4px; color: var(--text); text-decoration: none; }
 .admin-shortcuts a span { color: var(--muted); font-size: 11px; }
+.admin-access-app { display: grid; place-items: center; padding: 24px; }
+.admin-access-card { width: min(440px, 100%); padding: 28px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); box-shadow: var(--shadow); }
+.admin-access-card h1 { margin: 0 0 10px; font-size: 22px; }
+.admin-access-card p { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
 @media (max-width: 760px) {
   .admin-sidebar { flex-basis: 64px; align-items: center; padding: 14px 6px; gap: 12px; }
   .admin-brand > span:last-child, .admin-scope span, .admin-sidebar nav a:not(.active)::after, .admin-account-link > span:nth-child(2), .admin-account-link > svg, .admin-logout { display: none; }

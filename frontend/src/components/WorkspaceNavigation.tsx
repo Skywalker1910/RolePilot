@@ -21,7 +21,7 @@ export function WorkspaceNavigation({
       <div className="nav-group-label">WORKSPACE</div>
       <NavLink to="/" end title="Overview" aria-label="Overview">
         <LayoutDashboard />
-        Overview
+        <span>Overview</span>
       </NavLink>
       <NavLink
         to="/jobs"
@@ -32,7 +32,7 @@ export function WorkspaceNavigation({
         }
       >
         <BriefcaseBusiness />
-        Opportunities
+        <span>Opportunities</span>
       </NavLink>
       <NavLink
         to="/applications"
@@ -40,7 +40,7 @@ export function WorkspaceNavigation({
         aria-label="Applications"
       >
         <BriefcaseBusiness />
-        Applications
+        <span>Applications</span>
       </NavLink>
       <span
         className="nav-disabled"
@@ -48,11 +48,11 @@ export function WorkspaceNavigation({
         title="Network — coming soon"
       >
         <Users />
-        Network<small>Soon</small>
+        <span>Network</span><small>Soon</small>
       </span>
       <NavLink to="/documents" title="Documents" aria-label="Documents">
         <FileText />
-        Documents
+        <span>Documents</span>
       </NavLink>
       <span
         className="nav-disabled"
@@ -60,7 +60,7 @@ export function WorkspaceNavigation({
         title="Interviews — coming soon"
       >
         <CalendarDays />
-        Interviews<small>Soon</small>
+        <span>Interviews</span><small>Soon</small>
       </span>
       <div className="nav-group-label">MORE</div>
       <span
@@ -69,15 +69,15 @@ export function WorkspaceNavigation({
         title="Analytics — coming soon"
       >
         <ChartNoAxesCombined />
-        Analytics<small>Soon</small>
+        <span>Analytics</span><small>Soon</small>
       </span>
       <NavLink to="/archive" title="Archive" aria-label="Archive">
         <Archive />
-        Archive
+        <span>Archive</span>
       </NavLink>
       <NavLink to="/settings" title="Settings" aria-label="Settings">
         <Settings />
-        Settings
+        <span>Settings</span>
       </NavLink>
     </nav>
   );
