@@ -69,7 +69,7 @@ Only squash merging should be enabled in repository settings. Required checks ar
 
 | Check | Validation |
 | --- | --- |
-| Backend Tests | Python 3.13 locked install, Ruff, pytest, fresh migration/ORM consistency, pip-audit |
+| Backend Tests | Python 3.12 locked install, Ruff, pytest, fresh migration/ORM consistency, pip-audit |
 | Frontend Tests | Node 24 LTS, npm ci, ESLint, TypeScript, Vitest, Vite build, npm audit high+ |
 | Integration Tests | Actual Vite proxy and FastAPI with synthetic SQLite, import/search/archive/restore and restart |
 | Deployment Validation | Publication scan, workflow gates, environment template, shell syntax, archive/rollback/auth/backup tests |
@@ -218,7 +218,7 @@ must be treated as highly privileged, even with narrow sudo rights.
 - Host-key rotation: verify the new fingerprint through the Lightsail console or
   existing trusted administrator session, then update the environment secret.
 - Health failure: inspect Nginx/systemd and protected broker logs; verify HTTPS,
-  initial account, persistent directory permissions, and Python 3.13 wheel support.
+  initial account, persistent directory permissions, and Python 3.12 wheel support.
 - Lost host: provision a replacement only after authorization, install the approved
   source release, restore a verified encrypted off-instance backup while stopped,
   restore documents/snapshots from their separately tested backup, provision new SSH

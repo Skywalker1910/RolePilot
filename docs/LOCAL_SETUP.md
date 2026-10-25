@@ -5,7 +5,7 @@ This guide is for people who want to inspect the project or run their own local 
 ## Requirements
 
 - Git
-- Python 3.13 or newer
+- Python 3.12 or newer
 - Node.js 24 LTS and npm
 - A terminal with permission to create files in the project folder
 

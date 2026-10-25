@@ -51,7 +51,7 @@ def read_env(path):
         result[key] = value
     if result.get("ROLEPILOT_AUTH_REQUIRED") != "1" or result.get("ROLEPILOT_COOKIE_SECURE") != "1":
         raise ValueError("Hosted authentication and Secure cookies are required")
-    if result.get("ROLEPILOT_PUBLIC_ORIGIN") != "https://rolepilot.adityamore.dev":
+    if result.get("ROLEPILOT_PUBLIC_ORIGIN") != "https://career.adityamore.dev":
         raise ValueError("Unexpected production origin")
     for key in (
         "ROLEPILOT_DATA_DIR",
@@ -210,7 +210,7 @@ def deploy(commit, sequence, checksum):
 
         python = candidate / ".venv/bin/python"
         try:
-            build("/usr/bin/python3.13", "-m", "venv", str(candidate / ".venv"))
+            build("/usr/bin/python3.12", "-m", "venv", str(candidate / ".venv"))
             build(
                 str(python),
                 "-m",
