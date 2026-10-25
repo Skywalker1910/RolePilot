@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -28,8 +28,16 @@ Admin = Annotated[AuthUser, Depends(require_admin)]
 
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    username: str | None = Field(default=None, min_length=1, max_length=120)
     role: str = Field(pattern="^(admin|user)$")
     is_active: bool
+
+    @field_validator("username")
+    @classmethod
+    def trim_username(cls, value):
+        return value.strip() if value is not None else None
 
 
 def invitation_data(invitation: AuthInvitation, creator: AuthUser | None, used: AuthUser | None):
@@ -61,6 +69,8 @@ def list_users(_admin: Admin, session: DB):
         {
             "id": user.id,
             "username": user.username,
+            "display_name": user.display_name,
+            "email": user.email,
             "role": user.role,
             "is_active": user.is_active,
             "created_at": user.created_at,
@@ -76,6 +86,13 @@ def update_user(user_id: int, body: UserUpdate, admin: Admin, session: DB):
     user = session.get(AuthUser, user_id)
     if user is None:
         raise HTTPException(404, "User not found")
+    if body.username is not None:
+        duplicate = session.scalar(
+            select(AuthUser.id).where(AuthUser.username == body.username, AuthUser.id != user.id)
+        )
+        if duplicate:
+            raise HTTPException(409, "That username is already in use")
+        user.username = body.username
     would_remove_admin = (
         user.role == "admin" and user.is_active and (body.role != "admin" or not body.is_active)
     )

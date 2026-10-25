@@ -49,7 +49,7 @@ import { ErrorPanel } from "./App";
 export function Explorer({ archived = false }: { archived?: boolean }) {
   const [params, setParams] = useSearchParams();
   const [view, setView] = useState(() =>
-    localStorage.getItem("rolepilot-job-view") === "table" ? "table" : "cards",
+    localStorage.getItem("rolepilot-job-view") === "cards" ? "cards" : "table",
   );
   const [creating, setCreating] = useState(false);
   const [columnsOpen, setColumnsOpen] = useState(false);

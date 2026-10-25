@@ -37,6 +37,7 @@ from .schemas import (
     CompanyPatch,
     EditRequest,
     JobInput,
+    ListingStatusRequest,
     ReviewRequest,
     ShortlistRequest,
 )
@@ -120,6 +121,17 @@ async def local_requests(request: Request, call_next):
         }
         if path not in public_paths and record is None:
             return JSONResponse({"detail": "Authentication required"}, 401)
+        if record is not None and request.state.auth_user.role == "admin":
+            admin_paths = {
+                "/api/auth/session",
+                "/api/auth/logout",
+                "/api/auth/profile",
+                "/api/health",
+            }
+            if path not in admin_paths and not path.startswith("/api/admin/"):
+                return JSONResponse(
+                    {"detail": "Administrator accounts cannot access job workspace data"}, 403
+                )
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
             if request.headers.get("origin") != app.state.public_origin:
                 return JSONResponse({"detail": "Request origin is not allowed"}, 403)
@@ -349,19 +361,47 @@ def patch_job(job_id: int, body: EditRequest, session: DB):
 
 
 @app.delete("/api/jobs/{job_id}")
-def delete_job(job_id: int, session: DB):
-    # DELETE is deliberately a reversible archive operation to retain provenance.
+def delete_job(job_id: int, expected_revision: int, session: DB):
+    # Removal is deliberately reversible: preserve application/source history in Archive.
+    session.execute(text("BEGIN IMMEDIATE"))
     job = get_job(session, job_id)
-    if job.archived_at is None:
-        job.archived_at = utcnow()
+    if job.revision != expected_revision:
+        raise HTTPException(409, "Job changed; refresh before removing it")
+    if job.archived_at is None or job.listing_status != "Removed":
+        job.archived_at = job.archived_at or utcnow()
+        job.listing_status = "Removed"
         job.revision += 1
         session.add(
             ActivityEvent(
-                event_type="job.archived",
+                event_type="job.removed",
                 message=f"{job.company.name} · {job.job_title}",
             )
         )
         session.commit()
+    return serialize(job)
+
+
+@app.patch("/api/jobs/{job_id}/listing-status")
+def update_listing_status(job_id: int, body: ListingStatusRequest, session: DB):
+    session.execute(text("BEGIN IMMEDIATE"))
+    job = get_job(session, job_id)
+    if job.revision != body.expected_revision:
+        raise HTTPException(409, "Job changed; refresh before updating its listing status")
+    job.listing_status = body.listing_status
+    if body.listing_status == "Unavailable":
+        job.archived_at = utcnow()
+    elif body.listing_status == "Available":
+        job.archived_at = None
+    elif body.listing_status == "Removed":
+        job.archived_at = job.archived_at or utcnow()
+    job.revision += 1
+    session.add(
+        ActivityEvent(
+            event_type=f"job.listing_status.{body.listing_status.casefold()}",
+            message=f"{job.company.name} · {job.job_title}",
+        )
+    )
+    session.commit()
     return serialize(job)
 
 
@@ -372,6 +412,8 @@ def archive_job(job_id: int, body: ArchiveRequest, session: DB):
     if job.revision != body.expected_revision:
         raise HTTPException(409, "Job changed; refresh before archiving")
     job.archived_at = utcnow() if body.archived else None
+    if not body.archived and job.listing_status in {"Unavailable", "Removed"}:
+        job.listing_status = "Available"
     job.revision += 1
     session.add(
         ActivityEvent(
@@ -402,6 +444,13 @@ def shortlist_job(job_id: int, body: ShortlistRequest, session: DB):
 
 @app.get("/api/companies")
 def companies(session: DB):
+    active_job_counts = dict(
+        session.execute(
+            select(Job.company_id, func.count(Job.id))
+            .where(Job.archived_at.is_(None))
+            .group_by(Job.company_id)
+        ).all()
+    )
     return [
         {
             "id": c.id,
@@ -413,6 +462,7 @@ def companies(session: DB):
             "notes": c.notes,
             "created_at": c.created_at,
             "updated_at": c.updated_at,
+            "active_job_count": active_job_counts.get(c.id, 0),
         }
         for c in session.scalars(select(Company).order_by(Company.name))
     ]

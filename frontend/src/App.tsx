@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, Route, Routes, useNavigate } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDownToLine,
@@ -38,9 +38,11 @@ import {
 } from "./components/presentation";
 import { WorkspaceNavigation } from "./components/WorkspaceNavigation";
 import { CommandPalette } from "./components/CommandPalette";
-import { AdminPage } from "./Admin";
+import { AdminPortal } from "./Admin";
+import { ProfilePage } from "./Profile";
 
 export function App() {
+  const location = useLocation();
   const queryClient = useQueryClient();
   const auth = useQuery({
     queryKey: ["auth-session"],
@@ -88,6 +90,19 @@ export function App() {
     setDark(value);
     localStorage.setItem("rolepilot-theme", value ? "dark" : "light");
   }
+  if (auth.data?.auth_required && auth.data.user?.role === "admin") {
+    return (
+      <AdminPortal
+        user={auth.data.user}
+        onLogout={() => void logout()}
+        dark={dark}
+        toggleTheme={toggleTheme}
+      />
+    );
+  }
+  if (location.pathname.startsWith("/admin")) {
+    return <Navigate to="/" replace />;
+  }
   return (
     <div
       className={`${dark ? "app dark" : "app"}${collapsed ? " nav-collapsed" : ""}`}
@@ -126,19 +141,22 @@ export function App() {
             )}
           </button>
         </div>
-        <div className="workspace">
-          <span className="avatar">ME</span>
-          <div>
-            {auth.data?.user?.username ?? "Personal workspace"}
-            <small>
-              {auth.data?.auth_required
-                ? `Hosted · ${auth.data.user?.role ?? "Account"}`
-                : "Local · Single user"}
-            </small>
+        {auth.data?.user ? (
+          <Link to="/profile" className="workspace profile-switcher" aria-label="Open my profile">
+            <span className="avatar">{auth.data.user.username.slice(0, 2).toUpperCase()}</span>
+            <div>
+              {auth.data.user.username}
+              <small>Hosted · User</small>
+            </div>
+            <ChevronRight size={16} />
+          </Link>
+        ) : (
+          <div className="workspace">
+            <span className="avatar">ME</span>
+            <div>Personal workspace<small>Local · Single user</small></div>
           </div>
-          <ChevronRight size={16} />
-        </div>
-        <WorkspaceNavigation isAdmin={auth.data?.user?.role === "admin"} />
+        )}
+        <WorkspaceNavigation />
         <div className="local-card">
           <ShieldCheck size={19} />
           <strong>
@@ -218,7 +236,13 @@ export function App() {
             >
               {dark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <span className="avatar">ME</span>
+            {auth.data?.user ? (
+              <Link to="/profile" className="avatar profile-avatar" aria-label="Open my profile">
+                {auth.data.user.username.slice(0, 2).toUpperCase()}
+              </Link>
+            ) : (
+              <span className="avatar">ME</span>
+            )}
           </div>
         </header>
         <main id="main-content">
@@ -231,14 +255,8 @@ export function App() {
             <Route path="/archive" element={<Explorer archived />} />
             <Route path="/documents" element={<DocumentLibrary />} />
             <Route
-              path="/admin"
-              element={
-                auth.data?.user?.role === "admin" ? (
-                  <AdminPage />
-                ) : (
-                  <div className="panel panel-padding"><h1>Admin access required</h1></div>
-                )
-              }
+              path="/profile"
+              element={auth.data?.user ? <ProfilePage /> : <Navigate to="/settings" replace />}
             />
             <Route
               path="/settings"
@@ -268,7 +286,8 @@ export function App() {
           description="Navigate RolePilot"
         >
           <div className="mobile-navigation">
-            <WorkspaceNavigation isAdmin={auth.data?.user?.role === "admin"} onNavigate={() => setMenu(false)} />
+            {auth.data?.user && <Link className="mobile-profile-link" to="/profile" onClick={() => setMenu(false)}>My profile · {auth.data.user.username}</Link>}
+            <WorkspaceNavigation onNavigate={() => setMenu(false)} />
           </div>
         </Dialog>
         <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />

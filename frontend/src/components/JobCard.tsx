@@ -104,7 +104,9 @@ export function JobStatusBadge({ job }: { job: Job }) {
           ? "Checking status"
           : error
             ? "Status unavailable"
-            : application?.current_status ||
+              : job.listing_status && job.listing_status !== "Available"
+                ? job.listing_status
+                : application?.current_status ||
               (job.archived_at
                 ? "Archived"
                 : job.is_shortlisted
@@ -233,7 +235,9 @@ export function JobCard({
               ? "Checking status"
               : error
                 ? "Status unavailable"
-                : application?.current_status ||
+                : job.listing_status && job.listing_status !== "Available"
+                  ? job.listing_status
+                  : application?.current_status ||
                   (job.archived_at
                     ? "Archived"
                     : job.is_shortlisted

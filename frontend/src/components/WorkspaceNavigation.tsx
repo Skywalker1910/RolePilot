@@ -7,16 +7,13 @@ import {
   LayoutDashboard,
   Settings,
   Users,
-  UserCog,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
 export function WorkspaceNavigation({
   onNavigate,
-  isAdmin = false,
 }: {
   onNavigate?: () => void;
-  isAdmin?: boolean;
 }) {
   const { pathname } = useLocation();
   return (
@@ -82,12 +79,6 @@ export function WorkspaceNavigation({
         <Settings />
         Settings
       </NavLink>
-      {isAdmin && (
-        <NavLink to="/admin" title="Administration" aria-label="Administration">
-          <UserCog />
-          Administration
-        </NavLink>
-      )}
     </nav>
   );
 }

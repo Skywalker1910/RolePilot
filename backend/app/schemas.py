@@ -194,6 +194,11 @@ class ArchiveRequest(BaseModel):
     expected_revision: int
 
 
+class ListingStatusRequest(BaseModel):
+    listing_status: str = Field(pattern="^(Available|Unavailable|Removed)$")
+    expected_revision: int
+
+
 class ShortlistRequest(BaseModel):
     shortlisted: bool
     expected_revision: int

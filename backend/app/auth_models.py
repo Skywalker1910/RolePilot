@@ -8,9 +8,12 @@ from .db import Base, utcnow
 
 class AuthUser(Base):
     __tablename__ = "auth_users"
+    __table_args__ = (Index("uq_auth_users_email", "email", unique=True),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    display_name: Mapped[str | None] = mapped_column(String(120))
+    email: Mapped[str | None] = mapped_column(String(254))
     password_hash: Mapped[str] = mapped_column(String(300), nullable=False)
     role: Mapped[str] = mapped_column(
         String(20), default="user", server_default="user", nullable=False

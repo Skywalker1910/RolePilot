@@ -1,6 +1,16 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Pencil, Plus, Save, ArrowUpRight } from "lucide-react";
+import {
+  ArrowUpRight,
+  BriefcaseBusiness,
+  Building2,
+  ExternalLink,
+  MapPin,
+  Pencil,
+  Plus,
+  Search,
+  Save,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { api, post, validUrl, type Job } from "./api";
 import { Button } from "./components/ui/button";
@@ -19,6 +29,7 @@ type Company = {
   notes: string | null;
   updated_at: string;
   jobs?: Job[];
+  active_job_count?: number;
 };
 const blank = {
   name: "",
@@ -91,38 +102,76 @@ export function Companies() {
       )}
       {error && <ErrorPanel error={error} />}
       <div className="filter-bar">
-        <input
-          type="search"
-          aria-label="Search companies"
-          placeholder="Search company or industry…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <label className="company-search">
+          <Search size={16} aria-hidden="true" />
+          <input
+            type="search"
+            aria-label="Search companies"
+            placeholder="Search companies…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
         <span className="muted">{visible?.length ?? 0} employers</span>
       </div>
       {isPending ? (
         <LoadingSkeleton label="Loading companies" />
       ) : visible?.length ? (
-        <div className="companies-directory">
-          {visible.map((company) => (
-            <CompanyCard
-              key={company.id}
-              company={company}
-              onEdit={() => {
-                setEditing(company);
-                setDraft({
-                  name: company.name,
-                  industry: company.industry || "",
-                  website: company.website || "",
-                  careers_page_url: company.careers_page_url || "",
-                  headquarters: company.headquarters || "",
-                  notes: company.notes || "",
-                });
-                save.reset();
-                setOpen(true);
-              }}
-            />
-          ))}
+        <div className="company-table-wrap">
+          <table className="company-table">
+            <thead>
+              <tr>
+                <th scope="col">Company</th>
+                <th scope="col">Industry</th>
+                <th scope="col">Headquarters</th>
+                <th scope="col">Website</th>
+                <th scope="col">Careers</th>
+                <th scope="col">Open jobs</th>
+                <th scope="col"><span className="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((company) => (
+                <tr key={company.id}>
+                  <td>
+                    <span className="company-table-name">
+                      <span className="company-icon"><Building2 size={16} /></span>
+                      <span><strong>{company.name}</strong><small>{company.careers_page_url ? "Careers page available" : "Employer record"}</small></span>
+                    </span>
+                  </td>
+                  <td>{company.industry ? <IndustryTag industry={company.industry} /> : <span className="muted">Not set</span>}</td>
+                  <td><span className="company-table-location"><MapPin size={14} />{company.headquarters || "Not specified"}</span></td>
+                  <td>
+                    {company.website && validUrl(company.website) ? (
+                      <a className="company-domain" href={company.website} target="_blank" rel="noopener noreferrer">
+                        {domain(company.website)}<ExternalLink size={12} />
+                      </a>
+                    ) : <span className="muted">—</span>}
+                  </td>
+                  <td>
+                    {company.careers_page_url && validUrl(company.careers_page_url) ? (
+                      <a className="company-careers-link" href={company.careers_page_url} target="_blank" rel="noopener noreferrer">View careers <ArrowUpRight size={12} /></a>
+                    ) : <span className="muted">—</span>}
+                  </td>
+                  <td><Link className="company-job-count" to={`/jobs?company_id=${company.id}`}><BriefcaseBusiness size={14} />{company.active_job_count ?? 0}</Link></td>
+                  <td><Button variant="ghost" onClick={() => {
+                    setEditing(company);
+                    setDraft({
+                      name: company.name,
+                      industry: company.industry || "",
+                      website: company.website || "",
+                      careers_page_url: company.careers_page_url || "",
+                      headquarters: company.headquarters || "",
+                      notes: company.notes || "",
+                    });
+                    save.reset();
+                    setOpen(true);
+                  }} aria-label={`Edit ${company.name}`}><Pencil size={15} /></Button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="company-table-footer"><span>{visible.length} companies</span><span>Open jobs across your saved opportunities</span></div>
         </div>
       ) : (
         <EmptyState
@@ -200,74 +249,19 @@ export function Companies() {
   );
 }
 
-function CompanyCard({
-  company,
-  onEdit,
-}: {
-  company: Company;
-  onEdit: () => void;
-}) {
-  const { data, error } = useQuery({
-    queryKey: ["company", company.id],
-    queryFn: () => api<Company>(`/companies/${company.id}`),
-  });
+function domain(value: string) {
+  try { return new URL(value).hostname.replace(/^www\./, ""); }
+  catch { return value; }
+}
+
+function IndustryTag({ industry }: { industry: string }) {
+  const normalized = industry.toLowerCase();
+  const tone = /software|technology|saas|cyber|ai|cloud/.test(normalized) ? "blue"
+    : /finance|bank|insurance|investment/.test(normalized) ? "amber"
+      : /health|medical|biotech|pharma/.test(normalized) ? "green"
+        : /education|university|research/.test(normalized) ? "purple"
+          : /government|public|nonprofit/.test(normalized) ? "slate" : "teal";
   return (
-    <article className="company-card">
-      <div className="job-card-top">
-        <span className="company-icon">
-          {company.name.slice(0, 2).toUpperCase()}
-        </span>
-        <h2>{company.name}</h2>
-        <Button
-          variant="ghost"
-          onClick={onEdit}
-          aria-label={`Edit ${company.name}`}
-        >
-          <Pencil size={16} />
-        </Button>
-      </div>
-      <p>
-        {company.industry || "Industry not specified"}
-        <br />
-        {company.headquarters || "Headquarters not specified"}
-      </p>
-      {company.website && validUrl(company.website) && (
-        <a
-          className="quick-action"
-          href={company.website}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Company website <ArrowUpRight size={14} />
-        </a>
-      )}
-      {error && <p role="alert">{error.message}</p>}
-      <Link className="quick-action" to={`/jobs?company_id=${company.id}`}>
-        {data?.jobs?.length ?? "…"} opportunities <ArrowUpRight size={14} />
-      </Link>
-      <details>
-        <summary>Associated jobs</summary>
-        {data?.jobs?.length ? (
-          data.jobs.map((job) => (
-            <Link
-              key={job.id}
-              className="company-job-link"
-              to={`/${job.archived_at ? "archive" : "jobs"}?job=${job.id}`}
-            >
-              {job.job_title}
-              {job.archived_at ? " · Archived" : ""}
-            </Link>
-          ))
-        ) : (
-          <p className="muted">No listings yet.</p>
-        )}
-      </details>
-      {company.notes && (
-        <details>
-          <summary>Company notes</summary>
-          <p className="pre-wrap">{company.notes}</p>
-        </details>
-      )}
-    </article>
+    <span className={`industry-tag tone-${tone}`}>{industry}</span>
   );
 }

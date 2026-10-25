@@ -1,11 +1,81 @@
 import { useEffect, useState } from "react";
+import { Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Compass, KeyRound, LayoutDashboard, LogOut, Moon, ShieldCheck, Sun, UserRound, Users } from "lucide-react";
 import { api, post } from "./api";
 import { Button } from "./components/ui/button";
+import { ProfilePage } from "./Profile";
+
+type AdminUser = { id: number; username: string; role: "admin" | "user"; };
+
+export function AdminPortal({
+  user,
+  onLogout,
+  dark,
+  toggleTheme,
+}: {
+  user: AdminUser;
+  onLogout: () => void;
+  dark: boolean;
+  toggleTheme: () => void;
+}) {
+  const location = useLocation();
+  if (!location.pathname.startsWith("/admin")) return <Navigate to="/admin" replace />;
+  const title = location.pathname.startsWith("/admin/users")
+    ? "Users"
+    : location.pathname.startsWith("/admin/invitations")
+      ? "Invitation codes"
+      : location.pathname.startsWith("/admin/profile")
+        ? "My profile"
+        : "Admin dashboard";
+  return (
+    <div className={`app admin-app${dark ? " dark" : ""}`}>
+      <aside className="admin-sidebar">
+        <Link to="/admin" className="admin-brand">
+          <span className="brand-mark"><Compass size={20} /></span>
+          <span>RolePilot<small>ADMIN CONSOLE</small></span>
+        </Link>
+        <div className="admin-scope"><ShieldCheck size={15} /><span>User management only</span></div>
+        <nav aria-label="Administration navigation">
+          <NavLink to="/admin" end aria-label="Dashboard" title="Dashboard"><LayoutDashboard size={17} />Dashboard</NavLink>
+          <NavLink to="/admin/users" aria-label="Users" title="Users"><Users size={17} />Users</NavLink>
+          <NavLink to="/admin/invitations" aria-label="Invitation codes" title="Invitation codes"><KeyRound size={17} />Invitation codes</NavLink>
+        </nav>
+        <div className="admin-sidebar-bottom">
+          <Link to="/admin/profile" className="admin-account-link">
+            <span className="avatar">{user.username.slice(0, 2).toUpperCase()}</span>
+            <span>{user.username}<small>Administrator profile</small></span>
+            <UserRound size={16} />
+          </Link>
+          <button className="admin-logout" onClick={onLogout}><LogOut size={16} />Sign out</button>
+        </div>
+      </aside>
+      <div className="admin-main">
+        <header className="admin-topbar">
+          <div><span>ADMINISTRATION</span><h1>{title}</h1></div>
+          <button className="icon-button" onClick={toggleTheme} aria-label={dark ? "Use light theme" : "Use dark theme"}>
+            {dark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+        </header>
+        <main id="main-content" className="admin-content">
+          <Routes>
+            <Route path="/admin" element={<AdminPage section="overview" />} />
+            <Route path="/admin/users" element={<AdminPage section="users" />} />
+            <Route path="/admin/invitations" element={<AdminPage section="invitations" />} />
+            <Route path="/admin/profile" element={<ProfilePage adminMode />} />
+            <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </div>
+  );
+}
 
 type User = {
   id: number;
   username: string;
+  display_name?: string | null;
+  email?: string | null;
   role: "admin" | "user";
   is_active: boolean;
   created_at: string;
@@ -22,7 +92,7 @@ type Invitation = {
   revoked_at: string | null;
 };
 
-export function AdminPage() {
+export function AdminPage({ section = "all" }: { section?: "all" | "overview" | "users" | "invitations" }) {
   const client = useQueryClient();
   const [code, setCode] = useState("");
   const users = useQuery({
@@ -46,12 +116,17 @@ export function AdminPage() {
     onSuccess: () => client.invalidateQueries({ queryKey: ["admin-invitations"] }),
   });
   const update = useMutation({
-    mutationFn: ({ id, role, is_active }: Pick<User, "id" | "role" | "is_active">) =>
+    mutationFn: ({ id, username, role, is_active }: Pick<User, "id" | "username" | "role" | "is_active">) =>
       api(`/admin/users/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({ role, is_active }),
+        body: JSON.stringify({ username, role, is_active }),
       }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["admin-users"] }),
+    onSuccess: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["admin-users"] }),
+        client.invalidateQueries({ queryKey: ["auth-session"] }),
+      ]);
+    },
   });
 
   return (
@@ -60,11 +135,25 @@ export function AdminPage() {
         <div>
           <div className="eyebrow">ROLEPILOT</div>
           <h1>Administration</h1>
-          <p>Manage accounts and the one-time codes used to create them.</p>
+          <p>{section === "overview" ? "Manage access to the hosted RolePilot service." : "Manage accounts and the one-time codes used to create them."}</p>
         </div>
       </div>
 
-      <section className="panel panel-padding">
+      {section === "overview" && (
+        <>
+          <div className="primary-metrics admin-metrics">
+            <div className="metric-card"><span>Accounts</span><strong>{users.data?.length ?? "—"}</strong></div>
+            <div className="metric-card"><span>Active accounts</span><strong>{users.data?.filter((user) => user.is_active).length ?? "—"}</strong></div>
+            <div className="metric-card"><span>Unused invitations</span><strong>{invitations.data?.filter((item) => item.status === "unused").length ?? "—"}</strong></div>
+          </div>
+          <div className="admin-shortcuts">
+            <Link to="/admin/users" className="panel panel-padding"><strong>Manage users</strong><span>Roles, account access, and usernames</span></Link>
+            <Link to="/admin/invitations" className="panel panel-padding"><strong>Invitation codes</strong><span>Create, review, and revoke unused codes</span></Link>
+          </div>
+        </>
+      )}
+
+      {(section === "all" || section === "invitations") && <section className="panel panel-padding">
         <div className="section-heading">
           <div><h2>Invitation codes</h2><p className="muted">Each code can create one account. The full code is shown only when it is created.</p></div>
           <Button disabled={create.isPending} onClick={() => create.mutate()}>
@@ -96,25 +185,25 @@ export function AdminPage() {
             </tbody>
           </table>
         </div>
-      </section>
+      </section>}
 
-      <section className="panel panel-padding">
+      {(section === "all" || section === "users") && <section className="panel panel-padding">
         <h2>Accounts</h2>
-        <p className="muted">Inactive accounts cannot sign in. Account data is retained when access is turned off.</p>
+        <p className="muted">Usernames can only be changed here. Inactive accounts cannot sign in; their data is retained.</p>
         {users.error && <p role="alert" className="error">{users.error.message}</p>}
         {update.error && <p role="alert" className="error">{update.error.message}</p>}
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Username</th><th>Role</th><th>Access</th><th>Joined</th><th>Invitation</th><th>Action</th></tr></thead>
+            <thead><tr><th>Username</th><th>Profile</th><th>Role</th><th>Access</th><th>Joined</th><th>Invitation</th><th>Action</th></tr></thead>
             <tbody>
               {(users.data ?? []).map((user) => (
                 <UserRow key={user.id} user={user} busy={update.isPending} onSave={(next) => update.mutate({ id: user.id, ...next })} />
               ))}
-              {users.data?.length === 0 && <tr><td colSpan={6}>No accounts found.</td></tr>}
+              {users.data?.length === 0 && <tr><td colSpan={7}>No accounts found.</td></tr>}
             </tbody>
           </table>
         </div>
-      </section>
+      </section>}
     </div>
   );
 }
@@ -126,23 +215,26 @@ function UserRow({
 }: {
   user: User;
   busy: boolean;
-  onSave: (value: Pick<User, "role" | "is_active">) => void;
+  onSave: (value: Pick<User, "username" | "role" | "is_active">) => void;
 }) {
   const [role, setRole] = useState(user.role);
+  const [username, setUsername] = useState(user.username);
   const [isActive, setIsActive] = useState(user.is_active);
   useEffect(() => {
     setRole(user.role);
+    setUsername(user.username);
     setIsActive(user.is_active);
-  }, [user.role, user.is_active]);
-  const changed = role !== user.role || isActive !== user.is_active;
+  }, [user.username, user.role, user.is_active]);
+  const changed = username !== user.username || role !== user.role || isActive !== user.is_active;
   return (
     <tr>
-      <td>{user.username}</td>
+      <td><input aria-label={`Username for ${user.username}`} value={username} maxLength={120} onChange={(event) => setUsername(event.target.value)} /></td>
+      <td>{user.display_name || "—"}{user.email && <small className="admin-user-email">{user.email}</small>}</td>
       <td><select aria-label={`Role for ${user.username}`} value={role} onChange={(event) => setRole(event.target.value as User["role"])}><option value="user">User</option><option value="admin">Admin</option></select></td>
       <td><label className="admin-active"><input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} /> Active</label></td>
       <td>{new Date(user.created_at).toLocaleDateString()}</td>
       <td>{user.invitation_id ? `Invitation ${user.invitation_id}` : "Owner account"}</td>
-      <td><Button variant="outline" disabled={!changed || busy} onClick={() => onSave({ role, is_active: isActive })}>Save</Button></td>
+      <td><Button variant="outline" disabled={!changed || busy || !username.trim()} onClick={() => onSave({ username: username.trim(), role, is_active: isActive })}>Save</Button></td>
     </tr>
   );
 }

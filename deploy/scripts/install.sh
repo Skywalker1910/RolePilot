@@ -24,6 +24,7 @@ install -d -o root -g root -m 0755 "$root" "$root/releases" /etc/rolepilot /usr/
 touch "$root/deploy.lock"
 chmod 0644 "$root/deploy.lock"
 install -d -o rolepilot -g rolepilot -m 0700 /var/lib/rolepilot /var/lib/rolepilot/documents /var/lib/rolepilot/snapshots /var/lib/rolepilot/library/Resumes /var/lib/rolepilot/library/cover_letters /var/backups/rolepilot /var/backups/rolepilot/database
+install -d -o rolepilot -g rolepilot -m 0750 /var/log/rolepilot
 install -d -o root -g root -m 0700 /var/log/rolepilot-deploy
 install -d -o rolepilot-deploy -g rolepilot-deploy -m 0700 /var/lib/rolepilot-deploy/incoming
 install -d -o root -g www-data -m 0755 /var/www/letsencrypt
