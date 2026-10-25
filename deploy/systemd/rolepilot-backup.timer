@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily RolePilot backup schedule
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+RandomizedDelaySec=15m
+Unit=rolepilot-backup.service
+
+[Install]
+WantedBy=timers.target
