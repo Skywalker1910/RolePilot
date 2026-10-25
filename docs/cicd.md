@@ -6,12 +6,10 @@ explicitly authorized operations. The default deployment gate is closed.
 
 ## Repository audit and publication
 
-The intended repository is public `Skywalker1910/RolePilot`, with `main` as its default
-branch and the MIT License. It is created from a sanitized source snapshot as a new
-root commit, so older private repository commits are not in this repository's Git
-history. No local career records or personal documents belong in this source tree.
-The workspace had no Git history or remotes before this phase. Git was initialized
-without replacing any existing repository. Runtime SQLite/WAL/SHM, backups,
+The public repository is `Skywalker1910/RolePilot`, with `main` as its default branch
+and the MIT License. It starts from a sanitized source snapshot as a root commit, so
+older commits are not in this repository's Git history. No local career records or
+personal documents belong in this source tree. Runtime SQLite/WAL/SHM, backups,
 documents, imports/exports, temporary files, credentials, environment overrides,
 keys, dependencies and generated output are excluded. `docs/` source documentation,
 migrations, schema definitions and safe environment examples remain included.
@@ -83,9 +81,9 @@ environment. Audit-service outages fail the check rather than silently passing.
 Deployment is part of `ci.yml`; there is no independent push-triggered deployment.
 
 GitHub Free supports protected branches, environments, and environment secrets for
-public repositories. Apply the policy after `main` exists, then verify it through the
-API and a failing-check pull request. A configured policy file is not proof of
-enforcement. See [GitHub's protected-branch plan limits](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches)
+public repositories. This repository's rules have been applied and read back through
+the API. A configured policy file is not proof of enforcement; check the live rule
+after changing it. See [GitHub's protected-branch plan limits](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches)
 and [environment plan limits](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments).
 
 Apply the policy once main exists and check names are confirmed:
@@ -98,18 +96,13 @@ gh repo edit Skywalker1910/RolePilot --enable-squash-merge --enable-merge-commit
 
 ## Production environment and trust boundaries
 
-Create a GitHub environment named **production**, with deployment branches restricted
-to `main` (custom branch policy; no tag policy). No reviewer approval is requested.
-Leave repository variable **DEPLOYMENT_ENABLED=false** until the owner explicitly
-confirms readiness. An administrator must also change the root-owned server file
-`/etc/rolepilot/deployment-enabled` from `disabled` to `enabled` at that time.
-
-Create the `production` environment in the new public repository and restrict
-deployments to `main`. It starts with zero secrets. Leave repository variable
-`DEPLOYMENT_ENABLED=false` until the Lightsail readiness checklist is complete. Do
-not add production secrets until branch rules and environment scope are verified. Repository Actions
-are restricted to GitHub-owned actions, require full SHA pins, use read-only default
-workflow tokens and cannot approve PRs. The deploy enable variable remains false.
+The `production` environment is restricted to `main` and currently has no secrets.
+No reviewer approval is configured so validated `main` pushes can deploy
+automatically when the owner later enables delivery. Keep repository variable
+`DEPLOYMENT_ENABLED=false` until Lightsail readiness is explicitly confirmed and
+the root-owned server file `/etc/rolepilot/deployment-enabled` is set to `enabled`.
+Repository Actions are limited to GitHub-owned actions pinned to full commit SHAs;
+default workflow tokens are read-only and cannot approve pull requests.
 
 If recreating the environment, PUT
 `repos/Skywalker1910/RolePilot/environments/production` with
