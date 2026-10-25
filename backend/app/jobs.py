@@ -57,6 +57,7 @@ def job_data(job: Job):
     }
     data["company_name"] = job.company.name
     data["company_industry"] = job.company.industry
+    data["listing_status"] = job.listing_status
     for kind, field in (
         ("Required", "required_skills"),
         ("Preferred", "preferred_skills"),

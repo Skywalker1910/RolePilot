@@ -163,6 +163,8 @@ def test_invitation_is_one_time_linked_to_new_user(client, monkeypatch):
     assert created.status_code == 201
     code = created.json()["code"]
 
+    # The invited user's signup runs in a separate browser from the administrator.
+    client.cookies.clear()
     signed_up = client.post(
         "/api/auth/signup",
         json={

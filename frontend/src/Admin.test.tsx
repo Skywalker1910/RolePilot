@@ -31,7 +31,7 @@ describe("administrator account controls", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={client}><AdminPage /></QueryClientProvider>);
 
-    await screen.findByText("pilot");
+    await screen.findByRole("textbox", { name: "Username for pilot" });
     fireEvent.click(screen.getByRole("button", { name: "Create invitation" }));
     expect(await screen.findByText("RP-one-time-secret")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Hide code" }));

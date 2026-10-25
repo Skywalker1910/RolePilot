@@ -5,6 +5,7 @@ import { Link, NavLink } from "react-router-dom";
 import { date } from "../api";
 
 export function StatusBadge({ status }: { status: string }) {
+  const danger = /Removed|Rejected|Declined/.test(status);
   const tone = [
     "Offer Received",
     "Offer Accepted",
@@ -13,9 +14,11 @@ export function StatusBadge({ status }: { status: string }) {
     "Indexed",
   ].includes(status)
     ? "success"
-    : /Pending|On Hold|Needs Review|Missing|Unverified/.test(status)
+    : /Pending|On Hold|Needs Review|Missing|Unverified|Unavailable/.test(status)
       ? "warning"
-      : /Rejected|Withdrawn|Closed|Declined|Archived|Not Interested|No Response/.test(
+      : danger
+        ? "danger"
+        : /Withdrawn|Closed|Archived|Not Interested|No Response/.test(
             status,
           )
         ? "closed"
@@ -31,6 +34,8 @@ export function StatusBadge({ status }: { status: string }) {
       ? CheckCircle2
       : tone === "warning"
         ? Clock3
+        : tone === "danger"
+          ? X
         : status === "Shortlisted"
           ? Bookmark
           : Circle;
@@ -49,8 +54,14 @@ export function SkillTag({
   children: ReactNode;
   preferred?: boolean;
 }) {
+  const value = String(children).toLowerCase();
+  const tone = /python|javascript|typescript|java|c\+\+|c#|golang|rust/.test(value) ? "blue"
+    : /sql|data|analytics|pandas|spark|tableau/.test(value) ? "cyan"
+      : /machine learning|deep learning|llm|nlp|pytorch|tensorflow|ai/.test(value) ? "purple"
+        : /aws|azure|gcp|cloud|docker|kubernetes|terraform|devops/.test(value) ? "green"
+          : /react|fastapi|django|node|spring|\.net/.test(value) ? "teal" : "slate";
   return (
-    <span className={`skill-tag${preferred ? " preferred" : ""}`}>
+    <span className={`skill-tag tone-${tone}${preferred ? " preferred" : ""}`}>
       {children}
     </span>
   );

@@ -10,6 +10,7 @@ import {
   Copy,
   MapPin,
   Pencil,
+  Trash2,
   RotateCcw,
 } from "lucide-react";
 import {
@@ -65,6 +66,7 @@ export function JobDrawer({
   const client = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const [section, setSection] = useState<Section>("Overview");
   const [feedback, setFeedback] = useState("");
   function notify(message: string) {
@@ -95,6 +97,26 @@ export function JobDrawer({
           ? "Job restored."
           : "Job archived. All details are retained.",
       );
+      onClose();
+    },
+  });
+  const listingStatus = useMutation({
+    mutationFn: (status: "Available" | "Unavailable") =>
+      api(`/jobs/${id}/listing-status`, {
+        method: "PATCH",
+        body: JSON.stringify({ listing_status: status, expected_revision: job.revision }),
+      }),
+    onSuccess: async (_result, status) => {
+      await client.invalidateQueries();
+      onNotice(status === "Unavailable" ? "Listing marked unavailable and moved to Archive." : "Listing marked available and restored.");
+      onClose();
+    },
+  });
+  const remove = useMutation({
+    mutationFn: () => api(`/jobs/${id}?expected_revision=${job.revision}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      await client.invalidateQueries();
+      onNotice("Job removed and moved to Archive. Its application and source history are retained.");
       onClose();
     },
   });
@@ -176,7 +198,21 @@ export function JobDrawer({
               )}
               {job.archived_at ? "Restore" : "Archive"}
             </Button>
+            {job.listing_status === "Available" ? (
+              <Button variant="ghost" onClick={() => listingStatus.mutate("Unavailable")} disabled={listingStatus.isPending}>
+                Mark unavailable
+              </Button>
+            ) : job.listing_status === "Unavailable" ? (
+              <Button variant="ghost" onClick={() => listingStatus.mutate("Available")} disabled={listingStatus.isPending}>
+                Mark available
+              </Button>
+            ) : null}
+            <Button variant="ghost" onClick={() => setConfirmRemove(true)} disabled={remove.isPending}>
+              <Trash2 size={14} /> Remove job
+            </Button>
           </div>
+          {job.listing_status !== "Available" && <p className="listing-status-note"><strong>{job.listing_status}</strong> · This listing is in Archive. You can still review its saved details and history.</p>}
+          {listingStatus.error && <p role="alert" className="error">{listingStatus.error.message}</p>}
           {feedback && (
             <p className="notice" role="status">
               {feedback}
@@ -471,6 +507,16 @@ export function JobDrawer({
             busy={archive.isPending}
             error={archive.error?.message}
             onConfirm={() => archive.mutate()}
+          />
+          <ConfirmDialog
+            open={confirmRemove}
+            onOpenChange={setConfirmRemove}
+            title="Remove this job?"
+            description="It will be marked Removed and moved to Archive. Existing application records and source history will be kept. You can restore it later."
+            action="Remove job"
+            busy={remove.isPending}
+            error={remove.error?.message}
+            onConfirm={() => remove.mutate()}
           />
         </>
       )}

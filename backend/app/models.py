@@ -58,6 +58,10 @@ class Job(TenantOwned, Base):
             "minimum_experience IS NULL OR maximum_experience IS NULL "
             "OR minimum_experience <= maximum_experience"
         ),
+        CheckConstraint(
+            "listing_status IN ('Available', 'Unavailable', 'Removed')",
+            name="ck_jobs_listing_status",
+        ),
     )
     id: Mapped[int] = mapped_column(primary_key=True)
     company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"), index=True)
@@ -112,6 +116,9 @@ class Job(TenantOwned, Base):
     revision: Mapped[int] = mapped_column(Integer, default=1)
     locally_edited_fields: Mapped[list] = mapped_column(JSON, default=list)
     archived_at: Mapped[str | None] = mapped_column(index=True)
+    listing_status: Mapped[str] = mapped_column(
+        String(24), default="Available", server_default="Available", nullable=False
+    )
     company: Mapped[Company] = relationship(back_populates="jobs")
     skills: Mapped[list["JobSkill"]] = relationship(cascade="all, delete-orphan")
     provenance: Mapped[list["JobProvenance"]] = relationship(cascade="all, delete-orphan")

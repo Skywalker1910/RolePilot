@@ -12,7 +12,7 @@ from collections import defaultdict, deque
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
@@ -36,6 +36,44 @@ class Signup(BaseModel):
     username: str = Field(min_length=1, max_length=120)
     password: str = Field(min_length=14, max_length=1024)
     invitation_code: str = Field(min_length=20, max_length=100)
+
+
+class ProfileUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    display_name: str | None = Field(default=None, max_length=120)
+    email: str | None = Field(default=None, max_length=254)
+    current_password: str | None = Field(default=None, max_length=1024)
+    new_password: str | None = Field(default=None, min_length=14, max_length=1024)
+
+    @field_validator("display_name", "email", mode="before")
+    @classmethod
+    def normalize_optional_text(cls, value):
+        if isinstance(value, str):
+            value = value.strip()
+            return value or None
+        return value
+
+    @field_validator("email")
+    @classmethod
+    def valid_email(cls, value):
+        if value is not None and (
+            value.count("@") != 1
+            or value.startswith("@")
+            or value.endswith("@")
+            or "." not in value.rsplit("@", 1)[-1]
+            or any(character.isspace() for character in value)
+        ):
+            raise ValueError("Enter a valid email address")
+        return value.casefold() if value else None
+
+    @model_validator(mode="after")
+    def password_pair(self):
+        if self.new_password and not self.current_password:
+            raise ValueError("Enter your current password to change it")
+        if self.current_password and not self.new_password:
+            raise ValueError("Enter a new password")
+        return self
 
 
 def hash_password(password: str) -> str:
@@ -129,7 +167,27 @@ def issue_session(user: AuthUser, request: Request, response: Response, session:
 
 
 def user_data(user: AuthUser):
-    return {"id": user.id, "username": user.username, "role": user.role}
+    return {
+        "id": user.id,
+        "username": user.username,
+        "display_name": user.display_name,
+        "email": user.email,
+        "role": user.role,
+    }
+
+
+def profile_data(user: AuthUser):
+    return user_data(user) | {
+        "created_at": user.created_at,
+        "password_changed_at": user.password_changed_at,
+    }
+
+
+def require_current_user(request: Request) -> AuthUser:
+    user = getattr(request.state, "auth_user", None)
+    if user is None or not user.is_active:
+        raise HTTPException(401, "Authentication required")
+    return user
 
 
 @router.get("/session")
@@ -142,6 +200,46 @@ def auth_session(request: Request):
         "csrf_token": record.csrf_token if record else None,
         "user": user_data(request.state.auth_user) if record else None,
     }
+
+
+@router.get("/profile")
+def get_profile(user: AuthUser = Depends(require_current_user)):
+    return profile_data(user)
+
+
+@router.patch("/profile")
+def update_profile(
+    body: ProfileUpdate,
+    request: Request,
+    session: Session = Depends(get_session),
+    user: AuthUser = Depends(require_current_user),
+):
+    if "display_name" in body.model_fields_set:
+        user.display_name = body.display_name
+    if "email" in body.model_fields_set:
+        duplicate = (
+            session.scalar(
+                select(AuthUser.id).where(AuthUser.email == body.email, AuthUser.id != user.id)
+            )
+            if body.email
+            else None
+        )
+        if duplicate:
+            raise HTTPException(409, "That email address is already in use")
+        user.email = body.email
+    if body.new_password:
+        if not verify_password(body.current_password or "", user.password_hash):
+            raise HTTPException(400, "Current password is incorrect")
+        user.password_hash = hash_password(body.new_password)
+        user.password_changed_at = utcnow()
+        current_session = getattr(request.state, "auth_session", None)
+        for auth_session_record in session.scalars(
+            select(AuthSession).where(AuthSession.user_id == user.id)
+        ):
+            if current_session is None or auth_session_record.id != current_session.id:
+                session.delete(auth_session_record)
+    session.commit()
+    return profile_data(user)
 
 
 @router.post("/login")

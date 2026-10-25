@@ -18,6 +18,7 @@ export type Job = JobInput & {
   imported_at: string;
   updated_at: string;
   archived_at: string | null;
+  listing_status: "Available" | "Unavailable" | "Removed";
   locally_edited_fields: string[];
 };
 export type Provenance = {
