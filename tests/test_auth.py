@@ -29,7 +29,7 @@ def provision(client, username="pilot", password="correct horse battery staple 4
 
 def auth_headers(csrf=None):
     return {
-        "origin": "https://rolepilot.adityamore.dev",
+        "origin": "https://career.adityamore.dev",
         **({"x-csrf-token": csrf} if csrf else {}),
     }
 
@@ -363,8 +363,8 @@ def test_production_configuration_requires_auth_https_and_external_storage(tmp_p
     configured = {
         "ROLEPILOT_AUTH_REQUIRED": "1",
         "ROLEPILOT_COOKIE_SECURE": "1",
-        "ROLEPILOT_PUBLIC_ORIGIN": "https://rolepilot.adityamore.dev",
-        "ROLEPILOT_ALLOWED_HOSTS": "rolepilot.adityamore.dev",
+        "ROLEPILOT_PUBLIC_ORIGIN": "https://career.adityamore.dev",
+        "ROLEPILOT_ALLOWED_HOSTS": "career.adityamore.dev",
         "ROLEPILOT_DATA_DIR": str(tmp_path / "data"),
         "ROLEPILOT_LIBRARY_ROOT": str(tmp_path / "library"),
         "ROLEPILOT_DOCUMENT_STORAGE": str(tmp_path / "documents"),

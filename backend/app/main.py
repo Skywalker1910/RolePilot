@@ -79,9 +79,7 @@ app.state.auth_required = os.environ.get("ROLEPILOT_AUTH_REQUIRED", "0").casefol
 app.state.secure_cookies = os.environ.get(
     "ROLEPILOT_COOKIE_SECURE", "1" if app.state.auth_required else "0"
 ).casefold() in {"1", "true", "yes"}
-app.state.public_origin = os.environ.get(
-    "ROLEPILOT_PUBLIC_ORIGIN", "https://rolepilot.adityamore.dev"
-)
+app.state.public_origin = os.environ.get("ROLEPILOT_PUBLIC_ORIGIN", "https://career.adityamore.dev")
 if app.state.auth_required:
     try:
         validate_production_environment()
@@ -94,7 +92,7 @@ if app.state.auth_required and not app.state.secure_cookies:
 allowed_hosts = {"127.0.0.1", "localhost", "testserver"}
 allowed_hosts.update(
     host.strip()
-    for host in os.environ.get("ROLEPILOT_ALLOWED_HOSTS", "rolepilot.adityamore.dev").split(",")
+    for host in os.environ.get("ROLEPILOT_ALLOWED_HOSTS", "career.adityamore.dev").split(",")
     if host.strip()
 )
 app.include_router(library_router)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # Manual first-host bootstrap only. Review this script before running with sudo.
-# Requires an already provisioned Ubuntu host with Python 3.13 + venv support.
+# Requires an already provisioned Ubuntu host with Python 3.12 + venv support.
 [[ $EUID -eq 0 && $# -eq 3 ]] || { echo 'Usage: sudo bash install.sh ARCHIVE COMMIT_SHA ARCHIVE_SHA256' >&2; exit 2; }
 archive=$(realpath "$1")
 commit=$2
@@ -13,7 +13,7 @@ release="$root/releases/$commit"
 # Do not overwrite an existing install or automatically adopt a personal DB.
 [[ ! -e "$root/current" && ! -L "$root/current" && ! -e "$root/app" && ! -L "$root/app" ]] || { echo 'Existing installation: use the documented migration/update procedure.' >&2; exit 1; }
 [[ ! -e /var/lib/rolepilot/rolepilot.db && ! -e /var/lib/rolepilot/data/rolepilot.db ]] || { echo 'Existing database: stop and plan migration manually.' >&2; exit 1; }
-/usr/bin/python3.13 -c 'import venv'
+/usr/bin/python3.12 -c 'import venv'
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y nginx certbot curl sudo util-linux
 for account in rolepilot rolepilot-build; do
@@ -39,7 +39,7 @@ if [[ ! -f /etc/rolepilot/rolepilot.env ]]; then
 fi
 /usr/bin/python3 -I -c 'import sys; sys.path.insert(0, "/usr/local/lib/rolepilot-deploy"); from release import unpack; unpack(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])' "$archive" "$release" "$commit" "$checksum"
 chown -R rolepilot-build:rolepilot-build "$release"
-runuser -u rolepilot-build -- /usr/bin/python3.13 -m venv "$release/.venv"
+runuser -u rolepilot-build -- /usr/bin/python3.12 -m venv "$release/.venv"
 runuser -u rolepilot-build -- "$release/.venv/bin/pip" install --only-binary=:all: -r "$release/requirements.lock"
 chown -R root:root "$release"
 chmod -R u=rwX,go=rX "$release"

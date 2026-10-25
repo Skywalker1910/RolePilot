@@ -8,12 +8,12 @@ See [GitHub CI/CD](../docs/cicd.md) for repository settings and workflow details
 ## Readiness checklist — complete before enabling deployment
 
 - [ ] Owner explicitly authorizes provisioning and confirms server readiness.
-- [ ] Ubuntu host has Python **3.13** and venv support at `/usr/bin/python3.13`,
+- [ ] Ubuntu host has Python **3.12** and venv support at `/usr/bin/python3.12`,
   compatible binary wheels, systemd, Nginx, sudo, curl, and at least 2 GiB free disk
   space plus room for five releases and retained backups. Node is not needed on
   the server: CI builds the frontend. Size memory/storage for Python dependencies
   and backups; verify current Lightsail pricing and account credits before purchase.
-- [ ] Static IP assigned; only intended DNS `rolepilot.adityamore.dev` points to it.
+- [ ] Static IP assigned; only intended DNS `career.adityamore.dev` points to it.
 - [ ] SSH ingress strategy selected for Actions runners, administration restricted,
   80/443 reachable, API port 8000 never exposed.
 - [ ] TLS issued, renewal tested, HTTPS Nginx config installed and `nginx -t` passes.
@@ -63,8 +63,9 @@ allows replacing application code, so protect/rotate its key accordingly.
 
 ## Manual first-host bootstrap (not run by CI)
 
-1. Provision the host and Python 3.13 from an approved source. Review the scripts
-   and environment example. An existing legacy `/opt/rolepilot/app` installation
+1. Provision the host with Ubuntu's Python 3.12 and venv package (`sudo apt update`
+   then `sudo apt install -y python3.12 python3.12-venv`). Review the scripts and
+   environment example. An existing legacy `/opt/rolepilot/app` installation
    needs a manual layout migration; the installer refuses to overwrite it.
 2. Download `release-<sha>` from a successful **main CI run**. Verify the run's SHA,
    all four checks, and archive SHA-256. Transfer that source/static archive plus
@@ -77,7 +78,7 @@ allows replacing application code, so protect/rotate its key accordingly.
    databases and leaves automatic deployment **disabled**. Review partial setup
    after a failed bootstrap before retrying; never delete a database to rerun it.
 4. Issue TLS after approved DNS setup:
-   `sudo certbot certonly --webroot -w /var/www/letsencrypt -d rolepilot.adityamore.dev`.
+   `sudo certbot certonly --webroot -w /var/www/letsencrypt -d career.adityamore.dev`.
    Test `sudo certbot renew --dry-run`. Install `deploy/nginx/rolepilot.conf` as
    `/etc/nginx/sites-available/rolepilot`, run `sudo nginx -t`, reload Nginx. Arrange
    a Certbot deploy hook to reload Nginx after renewal. HTTP bootstrap does not

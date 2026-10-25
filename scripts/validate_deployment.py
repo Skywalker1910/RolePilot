@@ -66,7 +66,7 @@ def validate(root=ROOT):
         if line and not line.startswith("#")
     )
     assert template["ROLEPILOT_AUTH_REQUIRED"] == template["ROLEPILOT_COOKIE_SECURE"] == "1"
-    assert template["ROLEPILOT_PUBLIC_ORIGIN"] == "https://rolepilot.adityamore.dev"
+    assert template["ROLEPILOT_PUBLIC_ORIGIN"] == "https://career.adityamore.dev"
     for key in (
         "ROLEPILOT_DATA_DIR",
         "ROLEPILOT_LIBRARY_ROOT",
